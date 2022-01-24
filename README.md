@@ -10,5 +10,5 @@ Due to high margin of error from the small sample size and lack of demographic i
 • Our sample size might suffice for a smaller demographic, perhaps the population of a smaller area but since we have no demographic information we cannot accurately attach the data to a more specific region/location.
 
 ## Links to Calculators That I Used:
-Sample Size Calculator - https://www.surveymonkey.com/mp/sample-size-calculator/
-Margin of Error Calculator - https://www.pollfish.com/margin-of-error-calculator/
+#### Sample Size Calculator - https://www.surveymonkey.com/mp/sample-size-calculator/
+#### Margin of Error Calculator - https://www.pollfish.com/margin-of-error-calculator/
