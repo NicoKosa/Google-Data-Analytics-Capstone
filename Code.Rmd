@@ -1,0 +1,276 @@
+---
+title: "CapstoneProject_BellaBeat_GoogleDataAnalytics"
+author: "Nico Kosa"
+date: "9/5/2021"
+output: html_document
+---
+## EXPANDING VECTOR MEMORY
+```{r cars}
+Sys.setenv('R_MAX_VSIZE'=32000000000)
+```
+
+## LOADING IN PACKAGE LIBRARIES FILLED WITH THE FUNCTIONS AND COMMANDS I WILL USE
+```{r cars}
+library(tidyverse)
+library(readr)
+library(lubridate)
+library(janitor)
+```
+
+## READING THE SPREADHEETS/DATA DOCUMENTS
+```{r cars}
+secondsHeartrate <- read_csv("Fitabase Data 4.12.16-5.12.16 copy/heartrate_seconds_merged.csv")
+hourlyCalories <- read_csv("Fitabase Data 4.12.16-5.12.16 copy/hourlyCalories_merged.csv")
+hourlyIntensities <- read_csv("Fitabase Data 4.12.16-5.12.16 copy/hourlyIntensities_merged.csv")
+hourlySteps <- read_csv("Fitabase Data 4.12.16-5.12.16 copy/hourlySteps_merged.csv")
+minuteMETsNarrow <- read_csv("Fitabase Data 4.12.16-5.12.16 copy/minuteMETsNarrow_merged.csv")
+daySleep <- read_csv("Fitabase Data 4.12.16-5.12.16 copy/sleepDay_merged.csv")
+```
+
+VIEWING IMPORTED .CSV FILES TO MAKE SURE THEY ARE ACCURATE AND VIEWABLE
+```{r cars}
+View(secondsHeartrate)
+View(hourlyCalories)
+View(hourlyIntensities)
+View(hourlySteps)
+View(minuteMETsNarrow)
+View(daySleep)
+```
+
+## RENAMING ALL DATE/TIME COLUMNS TO "Time"
+```{r cars}
+secondsHeartrate <- secondsHeartrate %>% 
+  rename(ActivityHour = Time)
+
+minuteMETsNarrow <- minuteMETsNarrow %>% 
+  rename(ActivityHour = ActivityMinute)
+```
+
+##CHANGING ALL THE DATES AND TIMES TO AN EASIER TO SORT FORMAT AND IN NEW COLUMN TITLED "datetime"
+```{r cars}
+secondsHeartrate$datetime <- mdy_hms(secondsHeartrate$ActivityHour)
+hourlyCalories$datetime <- mdy_hms(hourlyCalories$ActivityHour)
+hourlyIntensities$datetime <- mdy_hms(hourlyIntensities$ActivityHour)
+hourlySteps$datetime <- mdy_hms(hourlySteps$ActivityHour)
+minuteMETsNarrow$datetime <- mdy_hms(minuteMETsNarrow$ActivityHour)
+daySleep$datetime <- mdy_hms(daySleep$SleepDay)
+```
+
+## DROPPING "ActivityHour" COLUMNS
+```{r cars}
+secondsHeartrate <- secondsHeartrate[,-2]
+hourlyCalories <- hourlyCalories[,-2]
+hourlyIntensities <- hourlyIntensities[,-2]
+hourlySteps <- hourlySteps[,-2]
+minuteMETsNarrow <- minuteMETsNarrow[,-2]
+daySleep <- daySleep[,-2]
+```
+
+## MERGING
+```{r cars}
+MainByHour <- merge(hourlyCalories, hourlyIntensities, by = c("Id", "datetime"))
+MainByHour <- merge(MainByHour, hourlySteps, by = c("Id", "datetime"))
+MainByHour <- merge(MainByHour, minuteMETsNarrow, by = c("Id", "datetime"), all=TRUE)
+MainByHour <- merge(MainByHour, secondsHeartrate, by = c("Id", "datetime"), all=TRUE)
+MainByHour <- merge(MainByHour, daySleep, by = c("Id", "datetime"), all=TRUE)
+```
+
+## EXAMINING MERGE RESULTS
+```{r cars}
+MainByHour %>% 
+  count(Id)
+
+secondsHeartrate %>% 
+  count(Id)
+
+minuteMETsNarrow %>% 
+  count(Id)
+
+hourlyIntensities %>% 
+  count(Id)
+
+hourlySteps %>% 
+  count(Id)
+
+hourlyCalories %>% 
+  count(Id)
+
+daySleep %>% 
+  count(Id)
+
+MainByHour %>% 
+  filter(Id=="2022484408")
+
+glimpse(MainByHour)
+glimpse(secondsHeartrate)
+```
+## SUMMARIZING BY HOUR AND GETTING THE HOURLY MEAN FOR NON-TIME VALUES
+```{r cars}
+MainByHourGrouped <- MainByHour %>% 
+  mutate(hour = hour(datetime),
+         date = date(datetime)) %>% 
+  group_by(Id, date, hour) %>% 
+  summarise(Calories = first(Calories),
+            TotalIntensity = first(TotalIntensity),
+            AverageIntensity = first(AverageIntensity),
+            StepTotal = first(StepTotal),
+            TotalSleepRecords = first(TotalSleepRecords),
+            TotalMinutesAsleep = first(TotalMinutesAsleep),
+            TotalTimeInBed = first(TotalTimeInBed),
+            METsHour = mean(METs, na.rm=TRUE),
+            HeartrateHour = mean(Value, na.rm=TRUE)) 
+```
+
+## ANOTHER QUICK GLIMPSE
+```{r cars}
+MainByHourGrouped %>% 
+  filter(Id=="1503960366")
+```
+## CREATING A NEW DATA FRAME
+```{r cars}
+hourlyActivity <- MainByHourGrouped %>% 
+  arrange(hour) %>% 
+  group_by(Id, hour) %>%
+  summarise(hourMETs = mean(METsHour, na.rm=TRUE))
+```
+
+##DATA VIZ - GETTING EACH PARTICIPANT'S TOTALL METS PER EACH HOUR ACROSS ALL DAYS TO SEE WHICH HOURS HAD THE MOST ACTIVITY
+```{r cars}
+hourlyActivity %>%
+  ggplot(aes(x=hour, y = hourMETs, fill = Id)) +
+  geom_area() +
+  theme(legend.position="none") +
+  scale_x_continuous(name="hour", breaks = c(1, 2, 3, 4, 5, 6, 7, 8 ,9 ,10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23), labels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"))
+```
+
+## SAVING PREVIOUS GGPLOT CHART GRAPHIC
+```{r cars}
+ ggsave(file="ActivityTimes.png", width=12, height=7)
+```
+
+## DATA VIZ - LINE PLOT OF METsHour VS Calories FOR ALL PARTICIPANTS 
+```{r cars}
+MainByHourGrouped$Id <- as.factor(MainByHourGrouped$Id)
+
+glimpse(MainByHourGrouped)
+ggplot(data=MainByHourGrouped) + geom_line(mapping=aes(x=METsHour, y=Calories, color=Id))
+```
+
+## SAVING PREVIOUS GGPLOT DATA VIZ
+```{r cars}
+ggsave(file="metsvscals.png")
+```
+
+## GETTING HIGHEST CALORIES/HOUR AND HIGHEST METs/HOUR TO CALCULATE SLOPE
+```{r cars}
+TopSlope <- MainByHourGrouped %>%
+  group_by(Id) %>% 
+  mutate(HighestMETsHour = max(METsHour, na.rm=TRUE)) %>%
+  distinct(Calories, .keep_all=TRUE) %>%
+  mutate(HighestCaloriesHour = max(Calories, na.rm=TRUE)) %>%
+  summarize (Id = first(Id), HighestCaloriesHour = first(HighestCaloriesHour), HighestMETsHour = first(HighestMETsHour))
+```
+
+
+## GETTING LOWEST CALORIES/HOUR AND LOWEST METs/HOUR TO CALCULATE SLOPE
+```{r cars}
+BottomSlope <- MainByHourGrouped %>%
+  group_by(Id) %>% 
+  filter(METsHour !=0) %>% 
+  mutate(LowestMETsHour = min(METsHour, na.rm=TRUE)) %>%
+  distinct(Calories, METsHour, .keep_all=TRUE) %>%
+  mutate(LowestCaloriesHour = min(Calories, na.rm=TRUE)) %>%
+  distinct(METsHour, .keep_all=TRUE) %>%
+  mutate(AverageMETs = mean(METsHour, na.rm = TRUE), AverageTimeInBed = mean(TotalTimeInBed, na.rm=TRUE), AverageMinutesAsleep = mean(TotalMinutesAsleep, na.rm=TRUE)) %>% 
+  mutate(Id = first(Id), LowestCaloriesHour = first(LowestCaloriesHour), LowestMETsHour = first(LowestMETsHour)) %>% 
+  distinct(AverageMETs, .keep_all=TRUE) %>% 
+  select(-c(date, hour, Calories, TotalIntensity, AverageIntensity, StepTotal, METsHour, HeartrateHour, TotalSleepRecords, TotalTimeInBed, TotalMinutesAsleep))
+```
+
+## COMBINING MIN AND MAX DATA TABLES TO ONE CHART TO CALCULATE SLOPES
+```{r cars}
+Slopes <- merge(BottomSlope, TopSlope, by = c("Id"))
+```
+
+## CALCULATING RISE, RUN, AND SLOPE USING NEW TABLE
+```{r cars}
+Slopes$Rise <- (Slopes$HighestCaloriesHour - Slopes$LowestCaloriesHour)
+Slopes$Run <- (Slopes$HighestMETsHour - Slopes$LowestMETsHour)
+Slopes$Slope <- (Slopes$Rise / Slopes$Run)
+```
+
+## SORTING IDs/ROWS BY THEIR SLOPE
+## TO CREATE A BETTER DATA VIZ
+## TO MORE CLEARLY SHOW THE RANGE OF SLOPES
+```{r cars}
+Slopes %>%
+  mutate(Id=fct_reorder(Id, Slope)) %>%
+  ggplot(aes(x=Id, y=Slope, fill=Id)) + geom_bar(stat="identity") + theme(legend.position="none", axis.text.x=element_text(angle = -90, hjust = 0))
+```
+
+## SAVING PREVIOUS GGPLOT CHART GRAPHIC
+```{r cars}
+ ggsave(file="Slopes.png", width = 14, height = 7)
+```
+
+##ARRANGING THE SLOPES DATAFRAME BY SLOPES
+```{r cars}
+Slopes %>% 
+  arrange(Slope)
+```
+## GROUPING USERS BASED ON THEIR SLOPES AS INDICATIONS OF THEIR HEALTH LEVELS TO COMPARE USERS
+```{r cars}
+UsertypeSort <- Slopes %>%
+summarise(
+user_type = factor(case_when(
+    Slope > 7.36 ~ "Less Healthy",
+    Slope < 7.36 & Slope > 5.64 ~ "Medium Healthy",
+    Slope < 5.64 ~ "More Healthy"
+),levels=c("Less Healthy", "Medium Healthy", "More Healthy")), AverageMETs, AverageTimeInBed, AverageMinutesAsleep,Slope,  Id=Id)
+```
+
+
+##MAKING SURE EACH USERTYPE HAS AN EQUAL NUMBER OF PARTICIPANTS
+```{r cars}
+UsertypeSort %>% 
+  arrange(Slope)
+```
+
+## ADDING AN AVERAGE TIME AWAKE IN BED COLUMN
+```{r cars}
+UsertypeSort$AvgTimeAwakeInBed <- (UsertypeSort$AverageTimeInBed - UsertypeSort$AverageMinutesAsleep)
+```
+
+## DATA VIZ - COMPARING AVERAGE METs OF USER GROUPS
+```{r cars}
+ggplot(UsertypeSort, aes(user_type, AverageMETs, fill=user_type)) +
+  geom_boxplot() +
+  theme(legend.position="none")
+```
+
+## SAVING DATA VIZ
+```{r cars}
+ggsave(file = "UserTypeMETs.png")
+```
+
+## DATA VIZ - COMPARING AVERAGE TIME ASLEEP OF USER GROUPS
+```{r cars}
+ggplot(UsertypeSort, aes(user_type, AverageMinutesAsleep, fill=user_type)) +
+  geom_boxplot() +
+  theme(legend.position="none")
+```
+## SAVING DATA VIZ
+```{r cars}
+ggsave(file="UserTypeSleepTime.png")
+```
+## DATA VIZ - COMPARING AVERAGE TIME AWAKE IN BED OF USER GROUPS
+```{r cars}
+ggplot(UsertypeSort, aes(user_type, AvgTimeAwakeInBed, fill=user_type)) +
+  geom_boxplot() +
+  theme(legend.position="none")
+```
+
+## SAVING DATA VIZ
+```{r cars}
+ggsave(file="UserTypeTimeInBedAwake.png")
+```
