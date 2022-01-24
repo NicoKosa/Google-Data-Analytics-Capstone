@@ -9,6 +9,6 @@ Due to high margin of error from the small sample size and lack of demographic i
 • For this analysis we have user data from 33 users which gives us a margin of error of 17% for an analysis of the American public which is well beyond the generally healthy margin of error range of 4%-8%.3 
 • Our sample size might suffice for a smaller demographic, perhaps the population of a smaller area but since we have no demographic information we cannot accurately attach the data to a more specific region/location.
 
-## Links to Calculators I used:
+## Links to Calculators That I Used:
 Sample Size Calculator - https://www.surveymonkey.com/mp/sample-size-calculator/
 Margin of Error Calculator - https://www.pollfish.com/margin-of-error-calculator/
