@@ -4,10 +4,6 @@ author: "Nico Kosa"
 date: "9/5/2021"
 output: html_document
 ---
-## EXPANDING VECTOR MEMORY
-```{r cars}
-Sys.setenv('R_MAX_VSIZE'=32000000000)
-```
 
 ## LOADING IN PACKAGE LIBRARIES FILLED WITH THE FUNCTIONS AND COMMANDS I WILL USE
 ```{r cars}
@@ -199,9 +195,7 @@ Slopes$Run <- (Slopes$HighestMETsHour - Slopes$LowestMETsHour)
 Slopes$Slope <- (Slopes$Rise / Slopes$Run)
 ```
 
-## SORTING IDs/ROWS BY THEIR SLOPE
-## TO CREATE A BETTER DATA VIZ
-## TO MORE CLEARLY SHOW THE RANGE OF SLOPES
+## SORTING IDs/ROWS BY THEIR SLOPE TO CREATE A BETTER DATA VIZ TO MORE CLEARLY SHOW THE RANGE OF SLOPES
 ```{r cars}
 Slopes %>%
   mutate(Id=fct_reorder(Id, Slope)) %>%
@@ -213,7 +207,7 @@ Slopes %>%
  ggsave(file="Slopes.png", width = 14, height = 7)
 ```
 
-##ARRANGING THE SLOPES DATAFRAME BY SLOPES
+## ARRANGING THE SLOPES DATAFRAME BY SLOPES
 ```{r cars}
 Slopes %>% 
   arrange(Slope)
@@ -230,7 +224,7 @@ user_type = factor(case_when(
 ```
 
 
-##MAKING SURE EACH USERTYPE HAS AN EQUAL NUMBER OF PARTICIPANTS
+## MAKING SURE EACH USERTYPE HAS AN EQUAL NUMBER OF PARTICIPANTS
 ```{r cars}
 UsertypeSort %>% 
   arrange(Slope)
